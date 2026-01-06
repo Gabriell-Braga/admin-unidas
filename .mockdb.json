@@ -1,0 +1,49 @@
+{
+  "users": [
+    {
+      "id": "bb96ddd5-42e8-4580-ac29-4b2a677b9e77",
+      "email": "gabriel.braga@unidas.com.br",
+      "name": "Gabriel Braga",
+      "password_hash": "8603e4be444a107ab01d0e2df7f903221a82da196adafba134ec74428ef36cb3",
+      "role": "user",
+      "status": "active"
+    },
+    {
+      "id": "admin-001-unidas",
+      "email": "admin@unidas.com.br",
+      "name": "Administrador",
+      "password_hash": "cf81cc1fc00af7ff008c7aa28c75224cfa6bff4db4660c156429de08845c6820",
+      "role": "admin",
+      "status": "active"
+    }
+  ],
+  "forms": [
+    {
+      "id": "form-001",
+      "name": "Formulário de Onboarding",
+      "createdBy": "bb96ddd5-42e8-4580-ac29-4b2a677b9e77",
+      "createdByName": "Gabriel Braga",
+      "createdAt": "2025-01-06T10:30:00Z",
+      "status": "active",
+      "fields": []
+    },
+    {
+      "id": "form-002",
+      "name": "Pesquisa de Satisfação",
+      "createdBy": "admin-001-unidas",
+      "createdByName": "Administrador",
+      "createdAt": "2025-01-05T14:15:00Z",
+      "status": "active",
+      "fields": []
+    },
+    {
+      "id": "form-003",
+      "name": "Cadastro de Funcionários",
+      "createdBy": "bb96ddd5-42e8-4580-ac29-4b2a677b9e77",
+      "createdByName": "Gabriel Braga",
+      "createdAt": "2025-01-04T09:00:00Z",
+      "status": "active",
+      "fields": []
+    }
+  ]
+}
