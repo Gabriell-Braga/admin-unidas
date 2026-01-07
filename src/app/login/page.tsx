@@ -3,6 +3,7 @@
 import { useState, FormEvent } from "react";
 import { getApiPath } from "@/src/lib/url";
 import Link from "next/link";
+import { getAppPath } from "@/src/lib/url";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
@@ -32,7 +33,7 @@ export default function LoginPage() {
       }
 
       // Redirect para dashboard após login bem-sucedido
-      router.push("/admin");
+      router.push(getAppPath("/admin"));
     } catch (err) {
       setError("Erro ao conectar ao servidor");
       console.error(err);
@@ -86,7 +87,7 @@ export default function LoginPage() {
 
         <p className="mt-6 text-center text-gray-600">
           Não tem conta?{" "}
-          <Link href="/register" className="auth-link">
+          <Link href={getAppPath("/register")} className="auth-link">
             Cadastre-se
           </Link>
         </p>

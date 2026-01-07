@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
+import { getAppPath } from "@/src/lib/url";
 import PeopleIcon from "@mui/icons-material/People";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import LogoutIcon from "@mui/icons-material/Logout";
@@ -36,7 +37,7 @@ export default function Sidebar({ userName, userRole, onLogout }: SidebarProps) 
     item.roles.includes(userRole)
   );
 
-  const isActive = (path: string) => pathname === path;
+  const isActive = (path: string) => pathname === path || pathname === getAppPath(path);
 
   return (
     <aside className="fixed h-screen w-60 bg-gray-50 border-r border-gray-200 flex flex-col">
@@ -60,7 +61,7 @@ export default function Sidebar({ userName, userRole, onLogout }: SidebarProps) 
             return (
               <li key={item.path}>
                 <button
-                  onClick={() => router.push(item.path)}
+                  onClick={() => router.push(getAppPath(item.path))}
                   className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all cursor-pointer ${
                     active
                       ? "bg-blue-50 border-l-4 border-primary text-primary font-semibold"

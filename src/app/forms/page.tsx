@@ -59,7 +59,7 @@ export default function FormsDashboard() {
       const userData = await userResponse.json() as { role?: string };
 
       if (!userResponse.ok) {
-        router.push("/login");
+        router.push(getAppPath("/login"));
         return;
       }
 

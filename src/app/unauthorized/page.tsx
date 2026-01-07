@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { getAppPath } from "@/src/lib/url";
 
 export default function UnauthorizedPage() {
   return (
@@ -41,7 +42,7 @@ export default function UnauthorizedPage() {
         }}>
           Você não tem permissão para acessar esta página. Sua conta pode estar aguardando aprovação de um administrador.
         </p>
-        <Link href="/login" style={{
+          <Link href={getAppPath("/login")} style={{
           display: "inline-block",
           padding: "12px 24px",
           backgroundColor: "#146ef5",

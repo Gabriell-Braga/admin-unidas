@@ -59,13 +59,13 @@ export default function AdminDashboard() {
       const userData = await userResponse.json() as { role?: string };
 
       if (!userResponse.ok) {
-        router.push("/login");
+        router.push(getAppPath("/login"));
         return;
       }
 
       // Se não for admin, redirecionar para formulários
       if (userData.role !== "admin") {
-        router.push("/forms");
+        router.push(getAppPath("/forms"));
         return;
       }
 

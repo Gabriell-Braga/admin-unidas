@@ -3,6 +3,7 @@
 import { useState, FormEvent } from "react";
 import { getApiPath } from "@/src/lib/url";
 import Link from "next/link";
+import { getAppPath } from "@/src/lib/url";
 import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
@@ -53,7 +54,7 @@ export default function RegisterPage() {
 
       setSuccess("Cadastro realizado com sucesso! Redirecionando...");
       setTimeout(() => {
-        router.push("/login");
+        router.push(getAppPath("/login"));
       }, 2000);
     } catch (err) {
       setError("Erro ao conectar ao servidor");
@@ -133,7 +134,7 @@ export default function RegisterPage() {
 
         <p className="mt-6 text-center text-gray-600">
           Já tem conta?{" "}
-          <Link href="/login" className="auth-link">
+            <Link href={getAppPath("/login")} className="auth-link">
             Faça login
           </Link>
         </p>

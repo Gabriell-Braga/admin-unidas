@@ -48,7 +48,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
   async function handleLogout() {
     try {
       await fetch(getApiPath("/api/auth/logout"), { method: "POST" });
-      router.push("/login");
+      router.push(getAppPath("/login"));
     } catch (err) {
       console.error("Erro ao fazer logout:", err);
     }
