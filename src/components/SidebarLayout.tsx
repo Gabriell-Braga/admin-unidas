@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import Sidebar from "@/src/components/Sidebar";
+import { getApiPath } from "@/src/lib/url";
 
 interface SidebarLayoutProps {
   children: React.ReactNode;
@@ -22,7 +23,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
     if (shouldShowSidebar) {
       const fetchUser = async () => {
         try {
-          const response = await fetch("/api/auth/me");
+          const response = await fetch(getApiPath("/api/auth/me"));
           const userData = await response.json();
           if (response.ok) {
             setUser(userData);
@@ -46,7 +47,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
 
   async function handleLogout() {
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      await fetch(getApiPath("/api/auth/logout"), { method: "POST" });
       router.push("/login");
     } catch (err) {
       console.error("Erro ao fazer logout:", err);

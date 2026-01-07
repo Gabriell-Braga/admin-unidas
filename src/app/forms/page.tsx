@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { getApiPath } from "@/src/lib/url";
 import { useRouter } from "next/navigation";
 import EditIcon from "@mui/icons-material/Edit";
 import AddIcon from "@mui/icons-material/Add";
@@ -54,7 +55,7 @@ export default function FormsDashboard() {
   async function fetchData() {
     try {
       // Obter informações do usuário logado
-      const userResponse = await fetch("/api/auth/me");
+      const userResponse = await fetch(getApiPath("/api/auth/me"));
       const userData = await userResponse.json() as { role?: string };
 
       if (!userResponse.ok) {
@@ -65,7 +66,7 @@ export default function FormsDashboard() {
       setUser(userData);
 
       // Buscar todos os formulários
-      const formsResponse = await fetch("/api/forms");
+      const formsResponse = await fetch(getApiPath("/api/forms"));
       const formsData = await formsResponse.json() as { forms?: Form[] };
       setAllForms(formsData.forms || []);
     } catch (err) {
@@ -101,7 +102,7 @@ export default function FormsDashboard() {
 
     setSavingFormId(editingForm.id);
     try {
-      const response = await fetch(`/api/forms/${editingForm.id}`, {
+      const response = await fetch(getApiPath(`/api/forms/${editingForm.id}`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: editingForm.name }),

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import EditIcon from "@mui/icons-material/Edit";
+import { getApiPath } from "@/src/lib/url";
 import EditUserDialog from "@/src/components/EditUserDialog";
 
 interface User {
@@ -54,7 +55,7 @@ export default function AdminDashboard() {
   async function fetchData() {
     try {
       // Obter informações do usuário logado
-      const userResponse = await fetch("/api/auth/me");
+      const userResponse = await fetch(getApiPath("/api/auth/me"));
       const userData = await userResponse.json() as { role?: string };
 
       if (!userResponse.ok) {
@@ -72,7 +73,7 @@ export default function AdminDashboard() {
 
       // Se for admin, buscar todos os usuários
       if (userData.role === "admin") {
-        const usersResponse = await fetch("/api/users/all");
+        const usersResponse = await fetch(getApiPath("/api/users/all"));
         const usersData = await usersResponse.json() as { users?: User[] };
         setAllUsers(usersData.users || []);
       }
@@ -123,7 +124,7 @@ export default function AdminDashboard() {
 
     setSavingUserId(editingUser.id);
     try {
-      const response = await fetch(`/api/users/${editingUser.id}/role`, {
+      const response = await fetch(getApiPath(`/api/users/${editingUser.id}/role`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
