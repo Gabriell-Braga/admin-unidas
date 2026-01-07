@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import EditIcon from "@mui/icons-material/Edit";
-import { getApiPath } from "@/src/lib/url";
+import { getApiPath, getAppPath } from "@/src/lib/url";
 import EditUserDialog from "@/src/components/EditUserDialog";
 
 interface User {

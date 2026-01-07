@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getApiPath } from "@/src/lib/url";
+import { getApiPath, getAppPath } from "@/src/lib/url";
 import { useRouter } from "next/navigation";
 import EditIcon from "@mui/icons-material/Edit";
 import AddIcon from "@mui/icons-material/Add";

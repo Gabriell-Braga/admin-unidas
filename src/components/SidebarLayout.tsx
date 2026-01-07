@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import Sidebar from "@/src/components/Sidebar";
-import { getApiPath } from "@/src/lib/url";
+import { getApiPath, getAppPath } from "@/src/lib/url";
 
 interface SidebarLayoutProps {
   children: React.ReactNode;
