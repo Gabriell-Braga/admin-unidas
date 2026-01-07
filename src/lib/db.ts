@@ -5,6 +5,9 @@ import crypto from "crypto";
 import fs from "fs";
 import path from "path";
 
+// SQL fallback: will lazy-load `sql.js` (WASM) only when needed
+let db: any = null;
+
 // Path to mock database file
 const mockDbPath = path.join(process.cwd(), ".mockdb.json");
 
@@ -35,11 +38,159 @@ export interface Env {
 
 // No Webflow Cloud (ambiente Cloudflare), o banco fica em process.env.DB
 // Aqui exportamos uma forma simples de acessá-lo
-export const db = (process.env.DB as unknown as D1Database);
+// Determine database: prefer Cloudflare D1 (process.env.DB), otherwise use SQLite file (sql.js), otherwise JSON mock
+// Try multiple places for the Cloudflare D1 binding used by Webflow Cloud
+const maybeDbFromGlobal = (globalThis as any)?.DB;
+if (process.env.DB) {
+  db = (process.env.DB as unknown as D1Database);
+} else if (maybeDbFromGlobal) {
+  db = maybeDbFromGlobal as D1Database;
+} else {
+  // Use sql.js + file persistence for local development (lazy-loaded)
+  const dataDir = path.join(process.cwd(), "data");
+  try {
+    if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+  } catch (e) {
+    console.error("Erro ao criar pasta data:", e);
+  }
 
-if (!db) {
-  console.warn("Aviso: Banco de dados D1 não encontrado. Usando arquivo JSON para desenvolvimento.");
+  const sqlitePath = path.join(dataDir, "db.sqlite");
+
+  let sqlDbInstancePromise: Promise<any> | null = null;
+
+  async function initSqlJsAndDb() {
+    if (sqlDbInstancePromise) return sqlDbInstancePromise;
+    sqlDbInstancePromise = (async () => {
+      const sqljs = await import("sql.js");
+      const init = sqljs.default || sqljs;
+      const SQL = await init({ locateFile: (file: string) => file });
+
+      let filebuffer: Uint8Array | undefined;
+      try {
+        if (fs.existsSync(sqlitePath)) {
+          filebuffer = fs.readFileSync(sqlitePath);
+        }
+      } catch (e) {
+        console.error("Erro ao ler arquivo sqlite:", e);
+      }
+
+      const sqlDb = filebuffer ? new SQL.Database(filebuffer) : new SQL.Database();
+
+      const persist = () => {
+        try {
+          const data = sqlDb.export();
+          fs.writeFileSync(sqlitePath, Buffer.from(data));
+        } catch (e) {
+          console.error("Erro ao persistir sqlite:", e);
+        }
+      };
+
+      function createWrapperDb(sqlDbInstance: any) {
+        return {
+          prepare(sql: string) {
+            return {
+              bind: (...params: any[]) => ({
+                run: async () => {
+                  const stmt = sqlDbInstance.prepare(sql);
+                  try {
+                    stmt.bind(params);
+                    stmt.step();
+                    const res = stmt.getAsObject();
+                    stmt.free();
+                    persist();
+                    return { success: true, lastRowId: undefined, changes: 1, result: res };
+                  } finally {
+                    try { stmt.free(); } catch {}
+                  }
+                },
+                all: async () => {
+                  const stmt = sqlDbInstance.prepare(sql);
+                  const rows: any[] = [];
+                  try {
+                    while (stmt.step()) rows.push(stmt.getAsObject());
+                    return { results: rows };
+                  } finally {
+                    try { stmt.free(); } catch {}
+                  }
+                },
+                first: async () => {
+                  const stmt = sqlDbInstance.prepare(sql);
+                  try {
+                    if (stmt.step()) return stmt.getAsObject();
+                    return null;
+                  } finally {
+                    try { stmt.free(); } catch {}
+                  }
+                }
+              }),
+              run: async (...params: any[]) => {
+                try {
+                  const res = sqlDbInstance.exec(sql);
+                  persist();
+                  return { success: true, lastRowId: undefined, changes: res && res[0] ? res[0].values.length : 0 };
+                } catch (e) {
+                  throw e;
+                }
+              },
+              all: async (...params: any[]) => {
+                try {
+                  const res = sqlDbInstance.exec(sql);
+                  const rows = (res[0] && res[0].values) ? res[0].values.map((vals: any[]) => {
+                    const cols = res[0].columns;
+                    const obj: any = {};
+                    cols.forEach((c: string, i: number) => obj[c] = vals[i]);
+                    return obj;
+                  }) : [];
+                  return { results: rows };
+                } catch (e) {
+                  throw e;
+                }
+              },
+              first: async (...params: any[]) => {
+                try {
+                  const res = sqlDbInstance.exec(sql);
+                  if (res[0] && res[0].values && res[0].values.length > 0) {
+                    const cols = res[0].columns;
+                    const vals = res[0].values[0];
+                    const obj: any = {};
+                    cols.forEach((c: string, i: number) => obj[c] = vals[i]);
+                    return obj;
+                  }
+                  return null;
+                } catch (e) {
+                  throw e;
+                }
+              }
+            };
+          }
+        };
+      }
+
+      return createWrapperDb(sqlDb);
+    })();
+    return sqlDbInstancePromise;
+  }
+
+  // db proxy that forwards to real wrapper once initialized
+  db = {
+    prepare(sql: string) {
+      return {
+        bind: (...params: any[]) => {
+          const promise = initSqlJsAndDb().then((r: any) => r.prepare(sql).bind(...params));
+          return {
+            run: () => promise.then((p: any) => p.run()),
+            all: () => promise.then((p: any) => p.all()),
+            first: () => promise.then((p: any) => p.first())
+          };
+        }
+      };
+    }
+  };
+
+  console.log("sql.js fallback ativo (WASM) em:", sqlitePath);
 }
+
+export { db };
 
 // Função para obter sessão do usuário a partir dos cookies
 export async function getSession() {

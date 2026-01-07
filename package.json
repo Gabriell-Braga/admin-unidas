@@ -10,6 +10,8 @@
     "deploy": "webflow cloud deploy",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:apply:local": "wrangler d1 migrations apply DB --local",
     "create-admin": "node scripts/create-admin.js"
   },
   "dependencies": {
@@ -19,7 +21,9 @@
     "@mui/material": "^7.3.6",
     "next": "15.2.8 ",
     "react": "^19.0.1",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "drizzle-orm": "^0.30.0",
+    "sql.js": "^1.7.0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250415.0",
@@ -34,6 +38,7 @@
     "postcss-import": "^16.1.0",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "wrangler": "^4.11.1"
+    "wrangler": "^4.11.1",
+    "tsx": "^3.12.7"
   }
 }

@@ -3,7 +3,11 @@ import { registerUser } from "@/src/lib/auth";
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password, name } = await request.json();
+    const { email, password, name } = await request.json() as {
+      email?: string;
+      password?: string;
+      name?: string;
+    };
 
     if (!email || !password || !name) {
       return NextResponse.json(

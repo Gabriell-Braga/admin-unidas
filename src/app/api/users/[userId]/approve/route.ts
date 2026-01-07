@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
     const cookieStore = await cookies();
@@ -17,7 +17,7 @@ export async function POST(
       );
     }
 
-    const { userId } = params;
+    const { userId } = await params;
 
     // Atualizar status do usuário para 'active'
     await updateUserStatus(userId, "active");

@@ -15,7 +15,8 @@
     {
       "binding": "DB",
       "database_name": "forms_db",
-      "database_id": "YOUR_DATABASE_ID"
+      "database_id": "YOUR_DATABASE_ID",
+      "migrations_dir": "drizzle"
     }
   ]
 }
