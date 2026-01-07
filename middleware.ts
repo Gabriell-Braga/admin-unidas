@@ -10,16 +10,8 @@ export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const sessionToken = request.cookies.get("sessionToken")?.value;
 
-  // Se é a página raiz
-  if (pathname === "/") {
-    if (!sessionToken) {
-      // Sem sessão, redireciona para login
-      return NextResponse.redirect(new URL("/login", request.url));
-    } else {
-      // Com sessão, redireciona para dashboard
-      return NextResponse.redirect(new URL("/admin", request.url));
-    }
-  }
+  // Nota: não tratamos aqui a raiz '/' para evitar conflitos com o
+  // redirecionamento server-side em src/app/page.tsx
 
   // Se está tentando acessar rotas protegidas sem autenticação
   if (protectedRoutes.some(route => pathname.startsWith(route)) && !sessionToken) {

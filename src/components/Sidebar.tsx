@@ -43,9 +43,9 @@ export default function Sidebar({ userName, userRole, onLogout }: SidebarProps) 
       {/* Header */}
       <div className="p-6 border-b border-gray-200 bg-white">
         <div>
-          <img 
-            src="/logo.svg" 
-            alt="Logo" 
+          <img
+            src="https://cdn.prod.website-files.com/6865244132669bb89826a742/690207961fe09cf80bda3e99_Institucional.svg"
+            alt="Logo"
             className="h-auto w-full"
           />
         </div>

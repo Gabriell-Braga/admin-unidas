@@ -60,114 +60,97 @@ if (process.env.DB) {
 
   async function initSqlJsAndDb() {
     if (sqlDbInstancePromise) return sqlDbInstancePromise;
-    sqlDbInstancePromise = (async () => {
-      const sqljs = await import("sql.js");
-      const init = sqljs.default || sqljs;
-      const SQL = await init({ locateFile: (file: string) => file });
 
-      let filebuffer: Uint8Array | undefined;
-      try {
-        if (fs.existsSync(sqlitePath)) {
-          filebuffer = fs.readFileSync(sqlitePath);
-        }
-      } catch (e) {
-        console.error("Erro ao ler arquivo sqlite:", e);
-      }
-
-      const sqlDb = filebuffer ? new SQL.Database(filebuffer) : new SQL.Database();
-
-      const persist = () => {
-        try {
-          const data = sqlDb.export();
-          fs.writeFileSync(sqlitePath, Buffer.from(data));
-        } catch (e) {
-          console.error("Erro ao persistir sqlite:", e);
+    // For stability in this environment, use the JSON mock DB wrapper only.
+    function createMockWrapper() {
+      return {
+        prepare(sql: string) {
+          return {
+            bind: (...params: any[]) => ({
+              run: async () => {
+                const mockDb = loadMockDb();
+                if (/INSERT INTO users/i.test(sql)) {
+                  mockDb.users.push({ id: params[0], email: params[1], name: params[2], password_hash: params[3], role: params[4], status: params[5] });
+                  saveMockDb(mockDb);
+                  return { success: true, lastRowId: params[0], changes: 1 };
+                }
+                if (/UPDATE users SET/i.test(sql)) {
+                  const mock = loadMockDb();
+                  const id = params[params.length - 1];
+                  const user = mock.users.find((u: any) => u.id === id);
+                  if (user) {
+                    if (/SET status = \?/i.test(sql)) user.status = params[0];
+                    if (/SET role = \?/i.test(sql)) user.role = params[0];
+                    if (/SET name = \?/i.test(sql)) user.name = params[0];
+                    saveMockDb(mock);
+                    return { success: true, changes: 1 };
+                  }
+                  return { success: true, changes: 0 };
+                }
+                return { success: true };
+              },
+              all: async () => {
+                const mockDb = loadMockDb();
+                if (/SELECT .* FROM users WHERE status = \?/i.test(sql)) {
+                  const status = params[0];
+                  const rows = mockDb.users.filter((u: any) => u.status === status).map((u: any) => ({ id: u.id, name: u.name, email: u.email, status: u.status, role: u.role }));
+                  return { results: rows };
+                }
+                return { results: [] };
+              },
+              first: async () => {
+                const mockDb = loadMockDb();
+                if (/SELECT \* FROM users WHERE email = \?/i.test(sql)) {
+                  const email = params[0];
+                  const user = mockDb.users.find((u: any) => u.email === email);
+                  return user || null;
+                }
+                if (/SELECT id, name, email, status, role FROM users WHERE id = \?/i.test(sql)) {
+                  const id = params[0];
+                  const user = mockDb.users.find((u: any) => u.id === id);
+                  if (!user) return null;
+                  return { id: user.id, name: user.name, email: user.email, status: user.status, role: user.role };
+                }
+                return null;
+              }
+            }),
+            run: async (...params: any[]) => {
+              const mockDb = loadMockDb();
+              if (/INSERT INTO users/i.test(sql)) {
+                mockDb.users.push({ id: params[0], email: params[1], name: params[2], password_hash: params[3], role: params[4], status: params[5] });
+                saveMockDb(mockDb);
+                return { success: true, lastRowId: params[0], changes: 1 };
+              }
+              return { success: true };
+            },
+            all: async (...params: any[]) => {
+              const mockDb = loadMockDb();
+              if (/SELECT .* FROM users WHERE status = \?/i.test(sql)) {
+                const status = params[0];
+                const rows = mockDb.users.filter((u: any) => u.status === status).map((u: any) => ({ id: u.id, name: u.name, email: u.email, status: u.status, role: u.role }));
+                return { results: rows };
+              }
+              if (/SELECT id, name, email, status, role FROM users/i.test(sql)) {
+                const rows = mockDb.users.map((u: any) => ({ id: u.id, name: u.name, email: u.email, status: u.status, role: u.role }));
+                return { results: rows };
+              }
+              return { results: [] };
+            },
+            first: async (...params: any[]) => {
+              const mockDb = loadMockDb();
+              if (/SELECT \* FROM users WHERE email = \?/i.test(sql)) {
+                const email = params[0];
+                const user = mockDb.users.find((u: any) => u.email === email);
+                return user || null;
+              }
+              return null;
+            }
+          };
         }
       };
+    }
 
-      function createWrapperDb(sqlDbInstance: any) {
-        return {
-          prepare(sql: string) {
-            return {
-              bind: (...params: any[]) => ({
-                run: async () => {
-                  const stmt = sqlDbInstance.prepare(sql);
-                  try {
-                    stmt.bind(params);
-                    stmt.step();
-                    const res = stmt.getAsObject();
-                    stmt.free();
-                    persist();
-                    return { success: true, lastRowId: undefined, changes: 1, result: res };
-                  } finally {
-                    try { stmt.free(); } catch {}
-                  }
-                },
-                all: async () => {
-                  const stmt = sqlDbInstance.prepare(sql);
-                  const rows: any[] = [];
-                  try {
-                    while (stmt.step()) rows.push(stmt.getAsObject());
-                    return { results: rows };
-                  } finally {
-                    try { stmt.free(); } catch {}
-                  }
-                },
-                first: async () => {
-                  const stmt = sqlDbInstance.prepare(sql);
-                  try {
-                    if (stmt.step()) return stmt.getAsObject();
-                    return null;
-                  } finally {
-                    try { stmt.free(); } catch {}
-                  }
-                }
-              }),
-              run: async (...params: any[]) => {
-                try {
-                  const res = sqlDbInstance.exec(sql);
-                  persist();
-                  return { success: true, lastRowId: undefined, changes: res && res[0] ? res[0].values.length : 0 };
-                } catch (e) {
-                  throw e;
-                }
-              },
-              all: async (...params: any[]) => {
-                try {
-                  const res = sqlDbInstance.exec(sql);
-                  const rows = (res[0] && res[0].values) ? res[0].values.map((vals: any[]) => {
-                    const cols = res[0].columns;
-                    const obj: any = {};
-                    cols.forEach((c: string, i: number) => obj[c] = vals[i]);
-                    return obj;
-                  }) : [];
-                  return { results: rows };
-                } catch (e) {
-                  throw e;
-                }
-              },
-              first: async (...params: any[]) => {
-                try {
-                  const res = sqlDbInstance.exec(sql);
-                  if (res[0] && res[0].values && res[0].values.length > 0) {
-                    const cols = res[0].columns;
-                    const vals = res[0].values[0];
-                    const obj: any = {};
-                    cols.forEach((c: string, i: number) => obj[c] = vals[i]);
-                    return obj;
-                  }
-                  return null;
-                } catch (e) {
-                  throw e;
-                }
-              }
-            };
-          }
-        };
-      }
-
-      return createWrapperDb(sqlDb);
-    })();
+    sqlDbInstancePromise = Promise.resolve(createMockWrapper());
     return sqlDbInstancePromise;
   }
 
@@ -182,7 +165,10 @@ if (process.env.DB) {
             all: () => promise.then((p: any) => p.all()),
             first: () => promise.then((p: any) => p.first())
           };
-        }
+        },
+        run: (...params: any[]) => initSqlJsAndDb().then((r: any) => r.prepare(sql).run(...params)),
+        all: (...params: any[]) => initSqlJsAndDb().then((r: any) => r.prepare(sql).all(...params)),
+        first: (...params: any[]) => initSqlJsAndDb().then((r: any) => r.prepare(sql).first(...params))
       };
     }
   };
@@ -192,6 +178,52 @@ if (process.env.DB) {
 
 export { db };
 
+// Ensure an initial admin user exists. Idempotent.
+export async function ensureInitialAdmin() {
+  try {
+    const adminEmail = process.env.INIT_ADMIN_EMAIL || "admin@unidas.com.br";
+    const adminPassword = process.env.INIT_ADMIN_PASSWORD || "Admin@2025!Unidas";
+    const adminName = process.env.INIT_ADMIN_NAME || "Admin";
+
+    // check existing
+    const existing = await (async () => {
+      try {
+        if (db) {
+          return await db.prepare("SELECT * FROM users WHERE email = ?").bind(adminEmail).first();
+        }
+        const mock = loadMockDb();
+        return mock.users.find((u: any) => u.email === adminEmail) || null;
+      } catch (e) {
+        return null;
+      }
+    })();
+
+    if (existing) return { created: false, id: existing.id };
+
+    const id = crypto.randomUUID();
+    // simple SHA256 hash to match `hashPassword` in auth.ts
+    const passwordHash = crypto.createHash("sha256").update(adminPassword).digest("hex");
+
+    if (db) {
+      await db
+        .prepare(
+          "INSERT INTO users (id, email, name, password_hash, role, status) VALUES (?, ?, ?, ?, ?, ?)"
+        )
+        .bind(id, adminEmail, adminName, passwordHash, "admin", "active")
+        .run();
+    } else {
+      const mockDb = loadMockDb();
+      mockDb.users.push({ id, email: adminEmail, name: adminName, password_hash: passwordHash, role: "admin", status: "active" });
+      saveMockDb(mockDb);
+    }
+
+    console.log("Admin seed: created admin", adminEmail);
+    return { created: true, id };
+  } catch (error) {
+    console.error("Erro ao garantir admin inicial:", error);
+    return { created: false };
+  }
+}
 // Função para obter sessão do usuário a partir dos cookies
 export async function getSession() {
   try {

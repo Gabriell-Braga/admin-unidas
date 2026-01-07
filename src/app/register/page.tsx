@@ -66,9 +66,9 @@ export default function RegisterPage() {
     <div className="auth-container">
       <div className="auth-card">
         <div className="mb-6 flex justify-center">
-          <img 
-            src="/logo.svg" 
-            alt="Logo" 
+          <img
+            src="https://cdn.prod.website-files.com/6865244132669bb89826a742/690207961fe09cf80bda3e99_Institucional.svg"
+            alt="Logo"
             className="h-10 w-auto"
           />
         </div>

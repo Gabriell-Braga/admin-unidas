@@ -27,11 +27,12 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
           if (response.ok) {
             setUser(userData);
           } else {
-            router.push("/login");
+            // Use full reload redirect to avoid router/client-hook render timing issues
+            window.location.href = "/login";
           }
         } catch (err) {
           console.error("Erro ao buscar usuário:", err);
-          router.push("/login");
+          window.location.href = "/login";
         } finally {
           setLoading(false);
         }
