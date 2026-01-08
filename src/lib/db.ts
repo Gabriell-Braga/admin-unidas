@@ -184,8 +184,25 @@ export async function ensureInitialAdmin() {
     const adminEmail = process.env.INIT_ADMIN_EMAIL || "admin@unidas.com.br";
     const adminPassword = process.env.INIT_ADMIN_PASSWORD || "Admin@2025!Unidas";
     const adminName = process.env.INIT_ADMIN_NAME || "Admin";
+    // Ensure users table exists (handles empty DB / missing migrations)
+    if (db) {
+      try {
+        await db.prepare(`
+          CREATE TABLE IF NOT EXISTS users (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            email TEXT NOT NULL UNIQUE,
+            password_hash TEXT,
+            role TEXT NOT NULL DEFAULT 'user',
+            status TEXT NOT NULL DEFAULT 'pending'
+          )
+        `).run();
+      } catch (e) {
+        // ignore - some DB bindings may not allow DDL here
+      }
+    }
 
-    // check existing
+    // check existing (after ensuring table exists)
     const existing = await (async () => {
       try {
         if (db) {

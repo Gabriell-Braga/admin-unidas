@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, FormEvent } from "react";
+import IconButton from "@mui/material/IconButton";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { getApiPath } from "@/src/lib/url";
 import Link from "next/link";
 import { getAppPath } from "@/src/lib/url";
@@ -15,6 +18,8 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -105,26 +110,60 @@ export default function RegisterPage() {
 
           <div className="form-group">
             <label className="label-base">Senha</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="input-primary"
-              placeholder="••••••••"
-            />
+            <div style={{ position: 'relative' }}>
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="input-primary"
+                placeholder="••••••••"
+                style={{ paddingRight: 40 }}
+              />
+              <IconButton
+                onClick={() => setShowPassword((v) => !v)}
+                tabIndex={-1}
+                style={{
+                  position: 'absolute',
+                  right: 12,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  padding: 0
+                }}
+                aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+              >
+                {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+              </IconButton>
+            </div>
           </div>
 
           <div className="form-group">
             <label className="label-base">Confirmar Senha</label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              className="input-primary"
-              placeholder="••••••••"
-            />
+            <div style={{ position: 'relative' }}>
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                className="input-primary"
+                placeholder="••••••••"
+                style={{ paddingRight: 40 }}
+              />
+              <IconButton
+                onClick={() => setShowConfirmPassword((v) => !v)}
+                tabIndex={-1}
+                style={{
+                  position: 'absolute',
+                  right: 12,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  padding: 0
+                }}
+                aria-label={showConfirmPassword ? "Ocultar senha" : "Mostrar senha"}
+              >
+                {showConfirmPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+              </IconButton>
+            </div>
           </div>
 
           <button type="submit" disabled={loading} className="btn-primary">
